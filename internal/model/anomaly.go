@@ -25,7 +25,7 @@ type Anomaly struct {
 }
 
 func (a Anomaly) Clone() Anomaly {
-	a.Evidence = a.Evidence
+	a.Evidence = cloneFloats(a.Evidence)
 	return a
 }
 

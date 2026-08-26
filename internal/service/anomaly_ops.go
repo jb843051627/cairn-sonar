@@ -30,7 +30,7 @@ func (s *Service) RaiseAnomaly(ctx context.Context, a model.Anomaly) error {
 		return err
 	}
 	s.cacheMu.Lock()
-	s.anomalyCache[a.SurveyID] = append(s.anomalyCache[a.SurveyID], a)
+	s.anomalyCache[a.SurveyID] = append(s.anomalyCache[a.SurveyID], a.Clone())
 	s.cacheMu.Unlock()
 	return s.repo.AppendEvent(ctx, a.SurveyID, "anomaly.raised", a.ID, utcNow(s.now))
 }
@@ -49,6 +49,9 @@ func (s *Service) ReviewAnomaly(ctx context.Context, id string, decision model.A
 	if err := s.repo.UpdateAnomaly(ctx, a); err != nil {
 		return err
 	}
+	s.cacheMu.Lock()
+	delete(s.anomalyCache, a.SurveyID)
+	s.cacheMu.Unlock()
 	survey, err := s.GetSurvey(ctx, a.SurveyID)
 	if err != nil {
 		return err
@@ -63,16 +66,20 @@ func (s *Service) ReviewAnomaly(ctx context.Context, id string, decision model.A
 }
 
 func (s *Service) ListAnomalies(ctx context.Context, surveyID string) ([]model.Anomaly, error) {
+	s.cacheMu.RLock()
 	cached, ok := s.anomalyCache[surveyID]
+	s.cacheMu.RUnlock()
 	if ok {
-		return cached, nil
+		return cloneAnomalies(cached), nil
 	}
 	items, err := s.repo.ListAnomalies(ctx, surveyID)
 	if err != nil {
 		return nil, err
 	}
-	s.anomalyCache[surveyID] = items
-	return items, nil
+	s.cacheMu.Lock()
+	s.anomalyCache[surveyID] = cloneAnomalies(items)
+	s.cacheMu.Unlock()
+	return cloneAnomalies(items), nil
 }
 func cloneAnomalies(in []model.Anomaly) []model.Anomaly {
 	out := make([]model.Anomaly, len(in))
