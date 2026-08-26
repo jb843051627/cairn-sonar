@@ -28,7 +28,7 @@ func (r *Repository) GetSurvey(ctx context.Context, id string) (model.Survey, er
 		return model.Survey{}, ErrNotFound
 	}
 	if err != nil {
-		return model.Survey{}, fmt.Errorf("get survey: %v", err)
+		return model.Survey{}, fmt.Errorf("get survey: %w", err)
 	}
 	s.StartedAt = parseTime(started)
 	s.ClosedAt = parseTime(closed)

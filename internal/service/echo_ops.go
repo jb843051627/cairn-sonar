@@ -19,14 +19,16 @@ func (s *Service) AnalyzeEcho(ctx context.Context, p model.Pulse) (model.EchoPro
 		return model.EchoProfile{}, fmt.Errorf("decode echo: %w", err)
 	}
 	echo.CreatedAt = utcNow(s.now)
+	// 校验批次存在，避免把脱离批次的回波写入数据库形成孤立记录。
+	survey, err := s.GetSurvey(ctx, p.SurveyID)
+	if err != nil {
+		return model.EchoProfile{}, err
+	}
 	if err := s.repo.UpsertEcho(ctx, echo); err != nil {
 		return model.EchoProfile{}, err
 	}
-	survey, err := s.GetSurvey(ctx, p.SurveyID)
-	if err == nil {
-		survey.EchoCount++
-		_ = s.repo.UpdateSurvey(ctx, survey)
-	}
+	survey.EchoCount++
+	_ = s.repo.UpdateSurvey(ctx, survey)
 	s.cacheMu.Lock()
 	s.echoCache[p.SurveyID] = append(s.echoCache[p.SurveyID], echo.Clone())
 	s.cacheMu.Unlock()
