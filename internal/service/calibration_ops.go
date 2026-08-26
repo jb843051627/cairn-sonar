@@ -2,7 +2,9 @@ package service
 
 import (
 	"cairn-sonar/internal/model"
+	"cairn-sonar/internal/store"
 	"context"
+	"errors"
 	"fmt"
 	"math"
 )
@@ -16,6 +18,9 @@ func (s *Service) CalibrateInstrument(ctx context.Context, c model.Calibration) 
 	}
 	instrument, err := s.repo.GetInstrument(ctx, c.InstrumentID)
 	if err != nil {
+		if errors.Is(err, store.ErrNotFound) {
+			return ErrInstrumentNotFound
+		}
 		return fmt.Errorf("load instrument: %w", err)
 	}
 	c.OffsetDB = c.ReferenceDB - c.MeasuredDB
