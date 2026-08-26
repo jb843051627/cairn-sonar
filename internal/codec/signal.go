@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
 	"math"
 	"strconv"
@@ -47,6 +48,10 @@ func DecodeSignal(data []byte) (SignalPacket, error) {
 	count := int(binary.BigEndian.Uint32(data[9:13]))
 	if count <= 0 {
 		return SignalPacket{}, ErrInvalidSignal
+	}
+	// 校验声明的样本数量没有超出实际可用载荷，防止损坏的长度字段导致越界读取。
+	if len(data) < 13+count*8+4 {
+		return SignalPacket{}, fmt.Errorf("%w: sample count %d exceeds payload of %d bytes", ErrInvalidSignal, count, len(data))
 	}
 	expected := binary.BigEndian.Uint32(data[len(data)-4:])
 	actual := checksumBytes(data[:len(data)-4])
@@ -99,7 +104,7 @@ func ReadSignalLines(reader io.Reader) ([]SignalPacket, error) {
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
 		if line == "" {
-			line = "0"
+			continue
 		}
 		samples, err := DecodeSamplesCSV(line)
 		if err != nil {
