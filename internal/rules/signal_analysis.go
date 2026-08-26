@@ -73,13 +73,14 @@ func SmoothSamples(samples []float64, width int) []float64 {
 }
 
 func DetectWindow(pulse model.Pulse, from, to int, cfg AnalysisConfig) (model.SampleWindow, error) {
+	sampleCount := len(pulse.Samples)
 	if from < 0 {
 		from = 0
 	}
 	if to <= 0 {
-		to = len(pulse.Samples)
+		to = sampleCount
 	}
-	if from >= to {
+	if from >= to || from > sampleCount || to > sampleCount {
 		return model.SampleWindow{}, ErrInvalidWindow
 	}
 	samples := append([]float64(nil), pulse.Samples[from:to]...)
