@@ -25,7 +25,7 @@ func (r *Repository) GetInstrument(ctx context.Context, id string) (model.Instru
 		return model.Instrument{}, ErrNotFound
 	}
 	if err != nil {
-		return model.Instrument{}, fmt.Errorf("get instrument: %v", err)
+		return model.Instrument{}, fmt.Errorf("get instrument: %w", err)
 	}
 	i.LastCalibrated = parseTime(calibrated)
 	i.Enabled = intBool(enabled)

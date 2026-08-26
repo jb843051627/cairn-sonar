@@ -20,13 +20,13 @@ func (s *Service) RecordPulse(ctx context.Context, p model.Pulse) error {
 		return err
 	}
 	if !survey.CanAcceptData() {
-		return fmt.Errorf("survey %s is not accepting pulses", p.SurveyID)
+		return fmt.Errorf("%w: survey %s", ErrSurveyNotAccepting, p.SurveyID)
 	}
 	if _, err := s.repo.GetInstrument(ctx, p.InstrumentID); err != nil {
 		if errors.Is(err, store.ErrNotFound) {
-			return fmt.Errorf("instrument lookup: %v", err)
+			return fmt.Errorf("%w: instrument %s", ErrInstrumentNotFound, p.InstrumentID)
 		}
-		return err
+		return fmt.Errorf("instrument lookup: %w", err)
 	}
 	if err := s.repo.InsertPulse(ctx, p.Clone()); err != nil {
 		return err
