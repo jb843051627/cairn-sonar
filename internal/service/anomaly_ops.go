@@ -49,6 +49,15 @@ func (s *Service) ReviewAnomaly(ctx context.Context, id string, decision model.A
 	if err := s.repo.UpdateAnomaly(ctx, a); err != nil {
 		return err
 	}
+	s.cacheMu.Lock()
+	if cached, ok := s.anomalyCache[a.SurveyID]; ok {
+		for i := range cached {
+			if cached[i].ID == a.ID {
+				cached[i] = a.Clone()
+			}
+		}
+	}
+	s.cacheMu.Unlock()
 	survey, err := s.GetSurvey(ctx, a.SurveyID)
 	if err != nil {
 		return err
