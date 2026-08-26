@@ -38,8 +38,12 @@ func New(repo *store.Repository, cfg Config) *Service {
 	if c == nil {
 		c = clock.Real{}
 	}
+	a := cfg.Archive
+	if a == nil {
+		a = FileArchive{}
+	}
 	q := worker.NewQueue(cfg.QueueSize)
-	return &Service{repo: repo, now: c, thresholds: rules.DefaultThresholds(), queue: q, archive: cfg.Archive, echoCache: make(map[string][]model.EchoProfile), anomalyCache: make(map[string][]model.Anomaly)}
+	return &Service{repo: repo, now: c, thresholds: rules.DefaultThresholds(), queue: q, archive: a, echoCache: make(map[string][]model.EchoProfile), anomalyCache: make(map[string][]model.Anomaly)}
 }
 
 func (s *Service) Repository() *store.Repository { return s.repo }
