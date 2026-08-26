@@ -3,9 +3,9 @@ package service
 import (
 	"cairn-sonar/internal/model"
 	"cairn-sonar/internal/rules"
+	"cairn-sonar/internal/store"
 	"context"
 	"crypto/sha256"
-	"database/sql"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -58,7 +58,7 @@ func (s *Service) ArchiveSurvey(ctx context.Context, id string) error {
 	}
 	archive, err := writer.Write(ctx, survey, echoes)
 	if err != nil {
-		return fmt.Errorf("%v: %v", ErrArchiveFailed, err)
+		return fmt.Errorf("%w: %w", ErrArchiveFailed, err)
 	}
 	if err := s.repo.SaveArchive(ctx, archive); err != nil {
 		return err
@@ -69,8 +69,8 @@ func (s *Service) ArchiveSurvey(ctx context.Context, id string) error {
 
 func (s *Service) GetArchive(ctx context.Context, id string) (model.Archive, error) {
 	a, err := s.repo.GetArchive(ctx, id)
-	if errors.Is(err, sql.ErrNoRows) {
-		return model.Archive{}, ErrArchiveFailed
+	if errors.Is(err, store.ErrNotFound) {
+		return model.Archive{}, ErrArchiveNotFound
 	}
 	return a, err
 }

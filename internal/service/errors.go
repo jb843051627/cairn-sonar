@@ -13,4 +13,5 @@ var (
 	ErrInvalidCalibration = errors.New("invalid calibration")
 	ErrArchiveBlocked     = errors.New("survey is not ready for archive")
 	ErrArchiveFailed      = errors.New("archive writer failed")
+	ErrArchiveNotFound    = errors.New("archive not found")
 )

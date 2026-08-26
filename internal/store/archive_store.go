@@ -3,6 +3,8 @@ package store
 import (
 	"cairn-sonar/internal/model"
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 )
 
@@ -14,8 +16,11 @@ func (r *Repository) GetArchive(ctx context.Context, surveyID string) (model.Arc
 	var a model.Archive
 	var completed string
 	err := r.db.QueryRowContext(ctx, `SELECT id,survey_id,object_key,digest,size_bytes,completed_at,verified FROM archives WHERE survey_id=? ORDER BY completed_at DESC LIMIT 1`, surveyID).Scan(&a.ID, &a.SurveyID, &a.ObjectKey, &a.Digest, &a.SizeBytes, &completed, &a.Verified)
+	if errors.Is(err, sql.ErrNoRows) {
+		return model.Archive{}, ErrNotFound
+	}
 	if err != nil {
-		return model.Archive{}, fmt.Errorf("get archive: %v", err)
+		return model.Archive{}, fmt.Errorf("get archive: %w", err)
 	}
 	a.CompletedAt = parseTime(completed)
 	return a, nil
