@@ -40,14 +40,16 @@ func (s *Service) RecordPulse(ctx context.Context, p model.Pulse) error {
 }
 
 func (s *Service) IngestBatch(ctx context.Context, surveyID string, pulses []model.Pulse) (int, error) {
-
+	if err := contextReady(ctx); err != nil {
+		return 0, err
+	}
 	accepted := 0
-	for _, p := range pulses {
-		p.SurveyID = surveyID
+	for i := range pulses {
 		if err := contextReady(ctx); err != nil {
 			return accepted, err
 		}
-		if err := s.RecordPulse(ctx, p); err != nil {
+		pulses[i].SurveyID = surveyID
+		if err := s.RecordPulse(ctx, pulses[i]); err != nil {
 			return accepted, err
 		}
 		accepted++
