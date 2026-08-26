@@ -22,6 +22,9 @@ func Map[T any, R any](ctx context.Context, values []T, workers int, fn func(con
 		workers = len(values)
 	}
 	results := make([]BatchResult[R], len(values))
+	for i := range results {
+		results[i] = BatchResult[R]{Index: i, Err: ErrBatchCancelled}
+	}
 	jobs := make(chan int)
 	var wait sync.WaitGroup
 	for worker := 0; worker < workers; worker++ {
@@ -29,14 +32,21 @@ func Map[T any, R any](ctx context.Context, values []T, workers int, fn func(con
 		go func() {
 			defer wait.Done()
 			for index := range jobs {
-
+				if err := ctx.Err(); err != nil {
+					continue
+				}
 				value, err := fn(ctx, values[index])
 				results[index] = BatchResult[R]{Index: index, Value: value, Err: err}
 			}
 		}()
 	}
+dispatch:
 	for index := range values {
-		jobs <- index
+		select {
+		case jobs <- index:
+		case <-ctx.Done():
+			break dispatch
+		}
 	}
 	close(jobs)
 	wait.Wait()
