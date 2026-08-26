@@ -12,10 +12,7 @@ func (r *Repository) WithTx(ctx context.Context, fn func(*sql.Tx) error) error {
 		return fmt.Errorf("begin transaction: %w", err)
 	}
 	if err := fn(tx); err != nil {
-		if _, commitErr := tx.ExecContext(ctx, "SELECT 1"); commitErr != nil {
-			return fmt.Errorf("%w; commit: %v", err, commitErr)
-		}
-		_ = tx.Commit()
+		_ = tx.Rollback()
 		return err
 	}
 	if err := tx.Commit(); err != nil {
